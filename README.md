@@ -1,9 +1,10 @@
 # Japanese Study Deck
 
-A daily study site with two sections:
+A daily study site with three sections:
 
 - **N3 語彙**: flashcards for all 2,140 JLPT N3 words.
-- **ビジネス敬語**: business Japanese for working with recruiters and companies in Japan. It has 185 flashcards (keigo verbs, job-hunting and workplace vocabulary, email, phone and interview phrases), a quiz with 87 questions, and a keigo guide.
+- **ビジネス敬語**: business Japanese for working with recruiters and companies in Japan. It has 293 flashcards (keigo verbs, job hunting, meetings and projects, sales and money, company roles, office life, and email, phone, interview and formal phrases), a quiz with 87 questions, and a keigo guide.
+- **投資・金融**: investments and private markets terminology for talking about your background with recruiters. It has 146 flashcards (fund basics, investors, secondaries and co-investment, venture deals, valuation, performance and reporting, markets and quant, career talk), a quiz with 48 questions, and a guide to describing your experience in Japanese.
 
 In both flashcard decks: each session is 20 cards. Each session is 20 cards. Words you miss come back at the end of the session and again in your next one. Words you know are spaced out further each time (1, 3, 7, 14, 30, 60, then 120 days). A progress bar shows how many words are mastered, reviewing, learning and still new.
 
@@ -20,6 +21,9 @@ Sign in with Google and your progress saves online, so it follows you to any dev
 | `biz-cards.js` | Business Japanese flashcards |
 | `biz-quiz.js` | Business Japanese quiz questions |
 | `biz-guide.js` | The keigo guide (Guide tab) |
+| `inv-cards.js` | Investment flashcards |
+| `inv-quiz.js` | Investment quiz questions |
+| `inv-guide.js` | Guide to talking about your background |
 | `legacy-v1-keys.js` | The original word order, used only to convert progress saved by the first version. Don't edit. |
 | `firebase-config.js` | Your Firebase settings (you fill this in, step 2) |
 | `firestore.rules` | Security rules that keep each person's progress private |
@@ -70,7 +74,7 @@ Questions you get wrong come back at the end of the quiz and again in your next 
 
 ## How saving works
 
-- Each section has its own progress (Firestore documents `users/{you}/deck/n3` and `users/{you}/deck/biz`). The existing `firestore.rules` already cover both.
+- Each section has its own progress (Firestore documents `users/{you}/deck/n3`, `.../biz` and `.../inv`). The existing `firestore.rules` already cover both.
 - **Signed in:** progress saves to your Firebase database under your Google account, and a copy stays in the browser. If you're offline, it saves on the device and catches up when you're back online.
 - **Signed out:** progress saves only in that browser.
 - **Signing in for the first time on a device:** anything you did while signed out on that device is combined into your account.

@@ -200,3 +200,6 @@ mark.fill{background:var(--ai-soft);color:var(--ai);border-radius:3px;padding:0 
 .guide pre{margin:0;white-space:pre-wrap;font-family:var(--f-ui);font-size:.92rem;line-height:1.8;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:12px 14px;overflow-x:auto}
 .script{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px}
 #hintBtn{align-self:flex-start;padding:6px 10px}
+.tabs{flex-wrap:wrap}
+@media (max-width:420px){.tab{padding:10px 8px 9px;font-size:.92rem}}
+.opt:disabled:not(.right):not(.wrong):hover{background:var(--surface)}

@@ -37,7 +37,11 @@ const DECKS = {
     legacy: window.N3_LEGACY_V1_KEYS || [],
     cards: (window.N3_WORDS||[]).map(w=>({w:w[0], r:w[1], m:w[2]}))}),
   biz: makeDeck({id:"biz", tab:"ビジネス敬語", heading:"ビジネス日本語", sub:"Keigo & business", unit:"cards", ls:"bizdeck-v1", doc:"biz",
-    cards: interleave(window.BIZ_CARDS||[]), quiz: window.BIZ_QUIZ||[], guide: window.BIZ_GUIDE||""})
+    cards: interleave(window.BIZ_CARDS||[]), quiz: window.BIZ_QUIZ||[], guide: window.BIZ_GUIDE||"",
+    quizTitle:"Keigo quiz", quizIntro:"Practise choosing the right keigo, putting business sentences together, and writing your own.", guideName:"keigo guide"}),
+  inv: makeDeck({id:"inv", tab:"投資・金融", heading:"投資・プライベート市場", sub:"Investments & private markets", unit:"cards", ls:"invdeck-v1", doc:"inv",
+    cards: interleave(window.INV_CARDS||[]), quiz: window.INV_QUIZ||[], guide: window.INV_GUIDE||"",
+    quizTitle:"Investment quiz", quizIntro:"Practise private markets terminology and how to describe your own experience to recruiters.", guideName:"guide to talking about your background"})
 };
 const DECK_IDS = Object.keys(DECKS);
 let D = DECKS.n3, mode = "cards";          // mode: cards | quiz | guide
@@ -344,7 +348,7 @@ function renderHome(summary){
         <button id="d-en" aria-pressed="${S.dir==="en"}">English → 日本語</button>
       </div>
     </div>
-    ${D.quiz.length && !summary ? `<p class="plan">Want to practise using these? Try the <a href="#${D.id}-quiz">quiz</a> or read the <a href="#${D.id}-guide">keigo guide</a>.</p>` : ""}
+    ${D.quiz.length && !summary ? `<p class="plan">Want to practise using these? Try the <a href="#${D.id}-quiz">quiz</a> or read the <a href="#${D.id}-guide">${esc(D.guideName||"guide")}</a>.</p>` : ""}
     ${backupHTML()}
     <div class="row" id="resetRow"><button class="ghost" id="reset">Reset flashcard progress</button></div>
   </div>`;
@@ -448,7 +452,7 @@ function renderQuizHome(summary){
     top = `<div class="done"><div class="stamp">済</div><div><h2>Quiz done — ${summary.ok} of ${summary.n} right</h2>
       <div class="plan">${summary.missed.length? "You'll see these again in your next quiz:" : "All correct. Nice work."}</div></div></div>
       ${summary.missed.length?`<ul class="qmiss">${missed}</ul>`:""}`;
-  } else top = `<h2>Keigo quiz</h2><p class="plan">Practise choosing the right keigo, putting business sentences together, and writing your own. Questions you get wrong come back in your next quiz.</p>`;
+  } else top = `<h2>${esc(D.quizTitle||"Quiz")}</h2><p class="plan">${esc(D.quizIntro||"")} Questions you get wrong come back in your next quiz.</p>`;
   const counts = {mix:D.quiz.length}; D.quiz.forEach(q=>counts[q.type]=(counts[q.type]||0)+1);
   view.innerHTML = `<div class="home">${top}
     <div class="chips" role="group" aria-label="Question type">
