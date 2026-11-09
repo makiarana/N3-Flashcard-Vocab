@@ -49,7 +49,7 @@ h1 small{font-family:var(--f-ui);font-weight:500;font-size:.8rem;color:var(--mut
 .dots{flex:1;display:flex;gap:3px}
 .dots i{flex:1;height:5px;border-radius:2px;background:var(--line)}
 .dots i.ok{background:var(--good)} .dots i.no{background:var(--shu)} .dots i.cur{background:var(--ai)}
-.card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 0 var(--line),0 12px 30px -18px rgba(20,30,60,.35);min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;text-align:center;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 0 var(--line),0 12px 30px -18px rgba(20,30,60,.35);min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .card:focus-visible{outline:2px solid var(--ai);outline-offset:3px}
 .tag{position:absolute;top:12px;left:14px;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .tag.again{color:var(--shu)}
@@ -203,3 +203,17 @@ mark.fill{background:var(--ai-soft);color:var(--ai);border-radius:3px;padding:0 
 .tabs{flex-wrap:wrap}
 @media (max-width:420px){.tab{padding:10px 8px 9px;font-size:.92rem}}
 .opt:disabled:not(.right):not(.wrong):hover{background:var(--surface)}
+
+/* text you can highlight (to look up kanji) */
+.card.revealed{cursor:auto}
+.card .word,.card .prompt-en,.card .back,.qcard,.result,.guide{-webkit-user-select:text;user-select:text}
+.static{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);display:flex;align-items:center;-webkit-user-select:text;user-select:text;cursor:text}
+.opt.static{gap:12px;padding:12px 14px;font-size:1.05rem}
+.opt.static:not(.right):not(.wrong){color:var(--muted)}
+.tile.static{padding:9px 12px;font-size:1.02rem}
+::selection{background:color-mix(in srgb,var(--ai) 28%,transparent)}
+
+/* undo */
+#undo{padding:6px 10px;font-size:.85rem}
+#undoLast{flex-direction:row;padding:12px 16px}
+.sbar .ghost:disabled{opacity:.35}

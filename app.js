@@ -192,7 +192,7 @@ function applyRoute(){
   const deck = DECKS[id] || DECKS.n3;
   let md = m==="quiz" || m==="guide" ? m : "cards";
   if(md!=="cards" && !deck.quiz.length) md = "cards";
-  if(deck!==D || md!==mode){ session = null; qs = null; }
+  if(deck!==D || md!==mode){ session = null; qs = null; lastFinished = null; }
   D = deck; mode = md;
   try{ localStorage.setItem(ROUTE_KEY, routeName()); }catch(e){}
   render();
@@ -280,6 +280,7 @@ function rateQ(i, ok, early){
 const view = document.getElementById("view");
 const ledgerEl = document.getElementById("ledger");
 let session = null; // flashcard session
+let lastFinished = null; // the session that just ended, kept so its last answer can be undone
 let qs = null;      // quiz session
 const busy = () => !!(session || qs);
 
@@ -343,6 +344,7 @@ function renderHome(summary){
     <div class="plan"><span>Next ${SESSION}: <b>${dueN}</b> to review · <b>${newN}</b> new</span></div>
     <div class="row">
       <button class="primary" id="go" ${dueN+newN?"":"disabled"}>${summary?`Start another ${SESSION}`:`Start ${SESSION} cards`}</button>
+      ${summary && lastFinished ? `<button id="undoLast" title="Go back to the last card (Z)">↶ Undo last answer</button>` : ""}
       <div class="seg" role="group" aria-label="Card direction">
         <button id="d-jp" aria-pressed="${S.dir==="jp"}">日本語 → English</button>
         <button id="d-en" aria-pressed="${S.dir==="en"}">English → 日本語</button>
@@ -354,6 +356,7 @@ function renderHome(summary){
   </div>`;
   wireBackup(()=>renderHome(summary));
   document.getElementById("go").onclick=start;
+  if(document.getElementById("undoLast")) document.getElementById("undoLast").onclick=undoFromSummary;
   document.getElementById("d-jp").onclick=()=>{S.dir="jp";save();renderHome(summary);};
   document.getElementById("d-en").onclick=()=>{S.dir="en";save();renderHome(summary);};
   wireReset("Erase every flashcard review in this section and start from zero?", ()=>{ D.S.cards={}; }, ()=>renderHome(summary));
@@ -370,7 +373,8 @@ function wireReset(question, doReset, back){
 /* ---------- flashcards: session ---------- */
 function start(){
   const q=buildSession(); if(!q.length) return;
-  session={queue:q, pos:0, revealed:false, results:{}, n:q.length};
+  session={queue:q, pos:0, revealed:false, results:{}, n:q.length, history:[]};
+  lastFinished=null;
   render();
 }
 function sizeClass(s){ const n=[...s].length; return n>18 ? " xlong" : n>9 ? " long" : ""; }
@@ -403,24 +407,28 @@ function renderCard(){
   const fmt=d=> d>=30? Math.round(d/30)+"mo" : d+"d";
   view.innerHTML = `<div class="sess">
     <div class="sbar"><span>${Math.min(s.pos+1,s.n)}/${s.n}${retry?" +retry":""}</span><div class="dots">${dots}</div>
+      <button class="ghost" id="undo" title="Undo your last answer (Z)" ${s.history.length?"":"disabled"}>↶ Undo</button>
       <button class="ghost" id="quit" title="End session">End</button></div>
-    <div class="card" id="card" tabindex="0" role="button" aria-label="${s.revealed?"Card answer":"Reveal answer"}">${tag}${cat}${front}${back}
+    <div class="card${s.revealed?" revealed":""}" id="card" tabindex="0" role="button" aria-label="${s.revealed?"Card answer":"Reveal answer"}">${tag}${cat}${front}${back}
       ${s.revealed?"":`<div class="hint">Tap or press space to reveal</div>`}</div>
     <div class="btns">${s.revealed?
       `<button class="again" id="b0">Didn't know<small>again</small></button>
        <button class="good" id="b1">Knew it<small>${retry?"today":fmt(INTERVALS[gi])}</small></button>
        <button id="b2">Easy<small>${retry?"today":fmt(INTERVALS[ei])}</small></button>`
       :`<button class="primary" id="flip" style="grid-column:1/-1">Show answer</button>`}</div>
-    <div class="keys"><kbd>Space</kbd> reveal · <kbd>1</kbd> didn't know · <kbd>2</kbd> knew it · <kbd>3</kbd> easy</div>
+    <div class="keys"><kbd>Space</kbd> reveal · <kbd>1</kbd> didn't know · <kbd>2</kbd> knew it · <kbd>3</kbd> easy · <kbd>Z</kbd> undo</div>
   </div>`;
-  document.getElementById("card").onclick=()=>{ if(!s.revealed) flip(); };
+  document.getElementById("undo").onclick=undo;
+  document.getElementById("card").onclick=()=>{ if(!s.revealed && !String(window.getSelection?window.getSelection():"")) flip(); };
   document.getElementById("quit").onclick=finish;
   if(s.revealed){ [0,1,2].forEach(g=>document.getElementById("b"+g).onclick=()=>answer(g)); }
   else document.getElementById("flip").onclick=flip;
 }
 function flip(){ session.revealed=true; renderCard(); }
 function answer(g){
-  const s=session, id=s.queue[s.pos], retry=s.pos>=s.n;
+  const s=session, id=s.queue[s.pos], retry=s.pos>=s.n, S=D.S, key=D.keys[id];
+  s.history.push({pos:s.pos, key, rec:S.cards[key]?S.cards[key].slice():null, todayCount:S.todayCount, lastDay:S.lastDay,
+    hadResult: id in s.results, result:s.results[id], qlen:s.queue.length});
   if(!retry){
     rate(id,g); rollDay(); D.S.todayCount++;
     s.results[id]= g>0;
@@ -430,9 +438,27 @@ function answer(g){
   s.pos++; s.revealed=false;
   if(s.pos>=s.queue.length) finish(); else render();
 }
+function undo(){
+  const s=session; if(!s || !s.history.length) return;
+  const h=s.history.pop(), S=D.S;
+  if(h.rec) S.cards[h.key]=h.rec; else delete S.cards[h.key];
+  S.todayCount=h.todayCount; S.lastDay=h.lastDay;
+  s.queue.length=h.qlen;
+  const id=s.queue[h.pos];
+  if(h.hadResult) s.results[id]=h.result; else delete s.results[id];
+  s.pos=h.pos; s.revealed=true;
+  save(); render();
+}
+function undoFromSummary(){ // reopen the session that just ended and take back its last answer
+  const f=lastFinished; if(!f) return;
+  lastFinished=null;
+  const S=D.S; S.streak=f.streak; S.doneDay=f.doneDay; S.sessions=f.sessions;
+  session=f.session; undo();
+}
 function finish(){
   const s=session; session=null;
   const answered=Object.keys(s.results).length;
+  lastFinished = s.history.length ? {session:s, streak:D.S.streak, doneDay:D.S.doneDay, sessions:D.S.sessions} : null;
   if(answered){ markSessionDone(); save(); }
   renderLedger();
   if(!answered){ renderHome(); return; }
@@ -490,12 +516,12 @@ function renderQuestion(){
     body = `<p class="qen">${esc(q.en)}</p><p class="qjp" lang="ja">${sentence}</p>
       <div class="opts">${u.order.map((o,n)=>{
         let cls=""; if(u.done){ if(o===q.a) cls="right"; else if(o===u.picked) cls="wrong"; }
-        return `<button class="opt ${cls}" data-o="${o}" ${u.done?"disabled":""} lang="ja"><kbd>${n+1}</kbd><span>${esc(q.opts[o])}</span></button>`;
+        return u.done ? `<div class="opt static ${cls}" lang="ja"><kbd>${n+1}</kbd><span>${esc(q.opts[o])}</span></div>` : `<button class="opt" data-o="${o}" lang="ja"><kbd>${n+1}</kbd><span>${esc(q.opts[o])}</span></button>`;
       }).join("")}</div>`;
   } else if(q.type==="order"){
     const right = u.done && u.ok;
     body = `<p class="qprompt">${esc(q.en)}</p>
-      <div class="line ${u.done?(right?"right":"wrong"):""}" aria-label="Your sentence">${u.chosen.length? u.chosen.map((t,n)=>`<button class="tile in" data-n="${n}" ${u.done?"disabled":""} lang="ja">${esc(q.tiles[t])}</button>`).join("") : `<span class="ph">Tap the pieces in order</span>`}</div>
+      <div class="line ${u.done?(right?"right":"wrong"):""}" aria-label="Your sentence">${u.chosen.length? u.chosen.map((t,n)=>(u.done ? `<span class="tile in static" lang="ja">${esc(q.tiles[t])}</span>` : `<button class="tile in" data-n="${n}" lang="ja">${esc(q.tiles[t])}</button>`)).join("") : `<span class="ph">Tap the pieces in order</span>`}</div>
       ${u.done? "" : `<div class="bank">${u.bank.map(t=>`<button class="tile" data-t="${t}" lang="ja">${esc(q.tiles[t])}</button>`).join("")}</div>`}`;
     if(!u.done) actions = `<div class="row"><button class="primary" id="check" ${u.bank.length?"disabled":""}>Check</button><button class="ghost" id="clear" ${u.chosen.length?"":"disabled"}>Clear</button></div>`;
   } else {
@@ -706,6 +732,11 @@ function wireBackup(back){
 /* ---------- keyboard ---------- */
 document.addEventListener("keydown",e=>{
   if(e.target.closest && e.target.closest("input,textarea")) return;
+  if(e.metaKey || e.ctrlKey || e.altKey) return;
+  if((e.key==="z"||e.key==="Z"||e.key==="Backspace") && mode==="cards"){
+    if(session && session.history.length){ e.preventDefault(); undo(); return; }
+    if(!session && lastFinished && document.getElementById("undoLast")){ e.preventDefault(); undoFromSummary(); return; }
+  }
   if(session){
     if(e.key===" "||e.key==="Enter"){ if(!session.revealed){ e.preventDefault(); flip(); } }
     else if(session.revealed && ["1","2","3"].includes(e.key)) answer(+e.key-1);
