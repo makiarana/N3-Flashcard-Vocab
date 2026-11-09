@@ -105,6 +105,10 @@ Progress is tracked by each word and its reading, not by its position in `words.
 - Removing a word hides it from sessions and the progress bar, but keeps its history.
 - Changing only the meaning keeps the progress.
 
+## After changing a file
+
+Browsers keep copies of the site's files, so an update can take a while to show up. Each file in `index.html` has a version tag like `app.js?v=20261109`. When you change any file, also change that number in `index.html` (for example to today's date) and upload `index.html` too. Browsers then fetch the new files straight away.
+
 ## Keyboard shortcuts
 
 Flashcards: `Space` shows the answer · `1` didn't know · `2` knew it · `3` easy
